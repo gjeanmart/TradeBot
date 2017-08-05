@@ -1,0 +1,29 @@
+{
+  "name": "trade-bot",
+  "version": "0.0.1",
+  "description": "A bot able to trade multiple cryptocurrencies pair on multiple exchanges in real time with deep learning analysis",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gjeanmart/TradeBot.git"
+  },
+  "author": "Gregoire Jeanmart <gregoire.jeanmart@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gjeanmart/TradeBot/issues"
+  },
+  "homepage": "https://github.com/gjeanmart/TradeBot#readme",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cron": "^1.2.1",
+    "express": "^4.15.3",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "winston": "^2.3.1"
+  }
+}
