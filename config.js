@@ -6,6 +6,11 @@ const logger = require('./common/log.js');
 
 var bodyParser      = require('body-parser');
 
+/**
+ * config.js
+ * @description: TODO
+ * @author: Gregoire Jeanmart <gregoire.jeanmart@gmail.com>
+ */
 module.exports = function(app) {
     
     // ************************************************************

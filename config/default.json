@@ -7,6 +7,10 @@
         "level": "info"
     }, 
     
+    "load_prices": {
+        "cron": "0 * * * * *"
+    }, 
+    
     "exchanges": [
         {
             "name": "bitrex",

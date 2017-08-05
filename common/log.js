@@ -6,7 +6,12 @@ var config      = require('config');
 var moment      = require('moment');
 const winston   = require('winston');
 
-var logger      = new (winston.Logger)({
+/**
+ * log.js
+ * @description: TODO
+ * @author: Gregoire Jeanmart <gregoire.jeanmart@gmail.com>
+ */
+module.exports = new (winston.Logger)({
     level           : config.get('logging.level'),
     transports      : [
         new (winston.transports.Console)({
@@ -17,4 +22,3 @@ var logger      = new (winston.Logger)({
         })
     ]
 });
-module.exports = logger;
