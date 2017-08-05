@@ -1,57 +1,81 @@
-'use strict';
-
-// Imports
-const config    = require('config');
-const logger    = require('../common/log.js');
-var rp          = require('request-promise');
-
-var CronJob     = require('cron').CronJob;
-
 /**
  * load-prices.js
  * @description: TODO
  * @author: Gregoire Jeanmart <gregoire.jeanmart@gmail.com>
  */
-module.exports = function() {
+var loadPrices = function(database) {
+
+    'use strict';
+
+    // Imports
+    var config      = require('config'),
+        logger      = require('../common/log.js'),
+        rp          = require('request-promise'),
+        CronJob     = require('cron').CronJob,
+        bittrex     = require('../exchange/bittrex.js');
 
     // Initialization
-    var cronjobs = [];
+    function init() {
+        var cronjobs = [];
 
-    for(var exchange of config.exchanges) {
-        
-        for(var pair of exchange.currency_pairs) {
-            logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.load_prices.cron+']');
-            
-            cronjobs.push(scheduleJob(exchange, pair));
-        }
-    }  
+        Object.keys(config.exchanges).forEach(function(key) {
+            var exchange = config.exchanges[key];
+            exchange.name = key;
+          
+            for(var pair of exchange.currency_pairs) {
+                logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.load_prices.cron+']');
+                
+                cronjobs.push(scheduleJob(exchange, pair));
+            }
+        });  
+    }
+    init();
+    
     
     // scheduleJob
     function scheduleJob(exchange, pair) {
+        
         try {
             
-            var cron = { };
+            var cron = {};
             
             cron.exchange   = exchange;
-            cron.pair       = pair
+            cron.pair       = pair;
             cron.job        = new CronJob(
                 config.load_prices.cron, 
                 function() {
-                    logger.debug('Load price for ' + cron.exchange.name + ", pair " + cron.pair);
+                    logger.debug('Load price for ' + exchange.name + ", pair " + pair);
                     
-                    rp({
-                        method  : "GET",
-                        uri     : cron.exchange.api_endpoint + "/public/getmarketsummary?market=" + pair  ,
-                    
-                    }).then(function(result) {
-                        logger.debug(cron.exchange.api_endpoint + "/public/getmarketsummary?market=" + pair, result);
-                    });  
+                    if(exchange.name === "bittrex") {
+                        bittrex.getMarketPrice(pair).then(function(result){
+                            logger.debug("bittrex.getMarketPrice(cron.pair="+pair+")", result);
+                            
+                            // Append the exchange name
+                            result.exchange = exchange.name;
+                            
+                            // Insert the price in the DB
+                            database.prices.insert(result, function (err, doc) { 
+                            
+                                if(err) {
+                                    logger.error("Error while inserting the price in the DB",err);
+                                }
+
+                                logger.debug("Price inserted in the DB", doc);
+                            });
+                            
+                        }).catch(function(error) {
+                            logger.error("bittrex.getMarketPrice(cron.pair="+pair+")", error);
+                        });
+                        
+                    } else {
+                        logger.warn("Unknow exchange", exchange)
+                    }
+ 
                 }, 
-                function() {
-                    logger.debug('Job stopped');
-                }, 
+                null, 
                 false, 
-                config.server.timezone);
+                config.server.timezone
+            );
                 
                 
             // Start the cronjob
@@ -65,8 +89,9 @@ module.exports = function() {
             logger.error('cron ['+config.load_prices.cron+'] not valid: ' + ex);
         }  
     }
+    
+    return {};
         
-}
+};
 
-
-
+module.exports = loadPrices;

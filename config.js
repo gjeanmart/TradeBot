@@ -1,18 +1,17 @@
-'use strict';
-
-// Import
-const config = require('config');
-const logger = require('./common/log.js');
-
-var bodyParser      = require('body-parser');
-
 /**
  * config.js
  * @description: TODO
  * @author: Gregoire Jeanmart <gregoire.jeanmart@gmail.com>
  */
-module.exports = function(app) {
-    
+var config = function(app) {
+
+    'use strict';
+
+    // Import
+    const config = require('config');
+    const logger = require('./common/log.js');
+    var bodyParser      = require('body-parser');
+
     // ************************************************************
     // API
     app.use(function (req, res, next) {
@@ -36,6 +35,8 @@ module.exports = function(app) {
 
     app.use(bodyParser.urlencoded({
         extended: true
-    })); 
-}
+    }));  
+        
+};
 
+module.exports = config;

@@ -1,6 +1,8 @@
 {
     "server": {
-        "port": 8080
+        "port": 8080,
+        "timezone": "GMT",
+        "encoding": "UTF-8"
     }, 
     
     "logging": {
@@ -13,9 +15,14 @@
     
     "exchanges": [
         {
-            "name": "bitrex",
+            "name": "bittrex",
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": "*********************************"
+            "api_key": "********************",
+            "currency_pairs": [
+                "BTC-ETH",
+                "BTC-LTC",
+                "BTC-DOGE"
+            ]
         }
     ]
 }
