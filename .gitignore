@@ -9,3 +9,7 @@
 .target
 build/*
 node_modules
+config/dev.json
+config/test.json
+config/staging.json
+config/production.json
