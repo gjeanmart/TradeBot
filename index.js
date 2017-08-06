@@ -27,10 +27,13 @@ var TradeBotApp = function() {
         
         //Load Jobs
         var priceLoader     = require('./jobs/load-prices.js')(database);
+        var tradeBot        = require('./jobs/trade-bot.js')(database, {});
         
         // Start API
         var accountAPI      = require('./api/account.js')(app);
         var pricesAPI       = require('./api/prices.js')(app, database);
+        
+        
         
     }); 
     

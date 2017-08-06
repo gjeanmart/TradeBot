@@ -9,7 +9,8 @@ var bittrexAPI = function() {
 
     var config      = require('config'),
         logger      = require('../common/log.js'),
-        api         = require('node.bittrex.api');
+        api         = require('node.bittrex.api'),
+        moment      = require('moment');
 
         
     api.options({
@@ -41,7 +42,7 @@ var bittrexAPI = function() {
                     return resolve({
                         'exchange'      : "bittrex",
                         'pair'          : data.result[0].MarketName,
-                        'timestamp'     : data.result[0].TimeStamp,
+                        'timestamp'     : moment(data.result[0].TimeStamp + "Z").toDate(),
                         'volume'        : data.result[0].Volume,
                         'high'          : data.result[0].High,
                         'low'           : data.result[0].Low,

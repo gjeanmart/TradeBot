@@ -21,7 +21,7 @@ var loadPrices = function(database) {
         exchange.name = key;
       
         for(var pair of exchange.currency_pairs) {
-            logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.load_prices.cron+']');
+            logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.jobs.load_prices.cron+']');
             
             cronjobs.push(scheduleJob(exchange, pair));
         }
@@ -39,7 +39,7 @@ var loadPrices = function(database) {
             cron.exchange   = exchange;
             cron.pair       = pair;
             cron.job        = new CronJob(
-                config.load_prices.cron, 
+                config.jobs.load_prices.cron, 
                 function() {
                     logger.debug('Load price for ' + exchange.name + ", pair " + pair);
                     
@@ -67,20 +67,14 @@ var loadPrices = function(database) {
  
                 }, 
                 null, 
-                false, 
+                true, 
                 config.server.timezone
             );
-                
-                
-            // Start the cronjob
-            cron.job.start(); 
-            
-            
-            
+
             return cron;
             
         } catch(ex) {
-            logger.error('cron ['+config.load_prices.cron+'] not valid: ' + ex);
+            logger.error('cron ['+config.jobs.load_prices.cron+'] not valid: ' + ex);
         }  
     }
     

@@ -9,15 +9,20 @@
         "level": "debug"
     }, 
     
-    "load_prices": {
-        "cron": "0 */5 * * * *"
-    }, 
-    
+    "jobs": {
+        "load_prices": {
+            "cron": "0 */5 * * * *"
+        },
+        "trade_bot": {
+            "cron": "0 * * * * *"
+        }
+    },
+
     "exchanges": {
         "bittrex": {
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": "***************************",
-            "api_sec": "***************************",
+            "api_key": "xxxxxxxxxxxxxxxxxxxxxxxx",
+            "api_sec": "xxxxxxxxxxxxxxxxxxxxxxxxx",
             "currency_pairs": [
                 "BTC-ETH",
                 "BTC-LTC",
