@@ -16,7 +16,7 @@
     "exchanges": {
         "bittrex": {
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": ""***************************",",
+            "api_key": "***************************",
             "api_sec": "***************************",
             "currency_pairs": [
                 "BTC-ETH",
