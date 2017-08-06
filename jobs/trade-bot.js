@@ -20,18 +20,19 @@ var tradeBot = function(database, params) {
     try {
         var job = new CronJob(
             config.jobs.trade_bot.cron, 
-            logic(), 
-            null, 
+            function() { logic(); },
+            null,
             true, 
             config.server.timezone
         );
 
     } catch(ex) {
         logger.error('cron ['+config.jobs.trade_bot.cron+'] not valid: ' + ex);
-    } 
+    }
     
     // Logic 
     function logic() {
+
         calculateChange(1, "hour");
         calculateChange(1, "day");
         calculateChange(7, "days");
@@ -97,9 +98,8 @@ var tradeBot = function(database, params) {
 
             });
             
-         }).catch(function(error) {
+        }).catch(function(error) {
             logger.error(error);
-            res.status(500).json(error);
         });
     }
 
