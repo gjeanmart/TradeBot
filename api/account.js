@@ -13,12 +13,30 @@ var accountAPI = function(app) {
 
         
     app.get('/api/v1/account/', (req, res) => {
-        logger.debug("GET /api/v1/account/ ...", req.params);
+        logger.debug("GET /api/v1/account/ ...", req.query);
 
-        bittrex.getAccounts().then(function(result){
+        
+        var promises = [];
+        Object.keys(config.exchanges).forEach(function(exchange) {
+
+            if(exchange === "bittrex") {
+                promises.push(bittrex.getAccounts());
+                
+            } else {
+                logger.warn("Unknow exchange", exchange)
+            }
+            
+        }); 
+        
+
+        Promise.all(promises).then(function(data){ 
+        
+            var result = [];
+            for(var r of data) { result.push(...r); }
+
             res.send(result);
             
-        }).catch(function(error) {
+         }).catch(function(error) {
             logger.error(error);
             res.status(500).json(error);
         });

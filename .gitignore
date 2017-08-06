@@ -13,3 +13,4 @@ config/dev.json
 config/test.json
 config/staging.json
 config/production.json
+*.db

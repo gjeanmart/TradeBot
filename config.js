@@ -8,9 +8,9 @@ var config = function(app) {
     'use strict';
 
     // Import
-    const config = require('config');
-    const logger = require('./common/log.js');
-    var bodyParser      = require('body-parser');
+    const   config          = require('config');
+    const   logger          = require('./common/log.js');
+    var     bodyParser      = require('body-parser');
 
     // ************************************************************
     // API

@@ -39,6 +39,7 @@ var bittrexAPI = function() {
                     }
 
                     return resolve({
+                        'exchange'      : "bittrex",
                         'pair'          : data.result[0].MarketName,
                         'timestamp'     : data.result[0].TimeStamp,
                         'volume'        : data.result[0].Volume,
@@ -71,6 +72,7 @@ var bittrexAPI = function() {
                     var result = [];
                     for(var d of data.result) {
                         result.push({
+                            'exchange'      : "bittrex",
                             'currency'      : d.Currency,
                             'balance'       : d.Balance
                         });

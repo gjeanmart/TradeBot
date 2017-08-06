@@ -13,8 +13,8 @@ var db = function() {
         Datastore   = require('nedb');
 
     // Initialization
-    var pricesDb = new Datastore({ 'filename': config.database.price });
-    pricesDb.loadDatabase(function (err) {    // Callback is optional
+    var pricesDb = new Datastore(config.database.prices);
+    pricesDb.loadDatabase(function (err) {
         if(err) {
             logger.error("Error while loading pricesDb", err);
         }

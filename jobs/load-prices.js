@@ -10,26 +10,23 @@ var loadPrices = function(database) {
     // Imports
     var config      = require('config'),
         logger      = require('../common/log.js'),
-        rp          = require('request-promise'),
         CronJob     = require('cron').CronJob,
         bittrex     = require('../exchange/bittrex.js');
 
     // Initialization
-    function init() {
-        var cronjobs = [];
+    var cronjobs = [];
 
-        Object.keys(config.exchanges).forEach(function(key) {
-            var exchange = config.exchanges[key];
-            exchange.name = key;
-          
-            for(var pair of exchange.currency_pairs) {
-                logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.load_prices.cron+']');
-                
-                cronjobs.push(scheduleJob(exchange, pair));
-            }
-        });  
-    }
-    init();
+    Object.keys(config.exchanges).forEach(function(key) {
+        var exchange = config.exchanges[key];
+        exchange.name = key;
+      
+        for(var pair of exchange.currency_pairs) {
+            logger.debug('Setup price loader job for [Exchange: '+exchange.name+', pair='+pair+', cron='+config.load_prices.cron+']');
+            
+            cronjobs.push(scheduleJob(exchange, pair));
+        }
+    });  
+
     
     
     // scheduleJob
@@ -49,10 +46,7 @@ var loadPrices = function(database) {
                     if(exchange.name === "bittrex") {
                         bittrex.getMarketPrice(pair).then(function(result){
                             logger.debug("bittrex.getMarketPrice(cron.pair="+pair+")", result);
-                            
-                            // Append the exchange name
-                            result.exchange = exchange.name;
-                            
+
                             // Insert the price in the DB
                             database.prices.insert(result, function (err, doc) { 
                             
