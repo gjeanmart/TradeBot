@@ -15,7 +15,7 @@ var tradeBot = function(database, params) {
         moment      = require('moment');
 
     // Initialization
-    logger.debug("trade-bot | params=", params);
+    logger.debug("Setup trade-bot | params=", params);
 
     try {
         var job = new CronJob(
@@ -32,13 +32,14 @@ var tradeBot = function(database, params) {
     
     // Logic 
     function logic() {
+        logger.debug("run trade-bot ...");
 
-        calculateChange(1, "hour");
-        calculateChange(1, "day");
-        calculateChange(7, "days");
+        calculatePercentageChange(1, "hour");
+        calculatePercentageChange(1, "day");
+        calculatePercentageChange(7, "days");
     } 
     
-    function calculateChange(val, unit) {    
+    function calculatePercentageChange(val, unit) {    
         var promises = [];
         Object.keys(config.exchanges).forEach(function(key) {
             var exchange = config.exchanges[key];
@@ -71,27 +72,32 @@ var tradeBot = function(database, params) {
 
             Object.keys(data).forEach(function(key) {
 
+                if(data[key].length === 0) {
+                    logger.warn("No data", data);
+                    return ;
+                }
+            
                 var exchange    = data[key][0].exchange,
                     pair        = data[key][0].pair;
               
               
                 var volumeStart = data[key][0].volume;
                 var volumeEnd = data[key][data[key].length-1].volume;
-                var volumePercentage = ((volumeEnd - volumeStart) / ((volumeEnd + volumeStart) / 2)) * 100;
+                var volumePercentage = ((volumeEnd - volumeStart) / volumeStart) * 100;
                 logger.debug(exchange + " - " + pair + " - volumePercentage (val="+val+", unit="+unit+")="+volumePercentage);
               
               
               
                 var bidStart = data[key][0].bid;
                 var bidEnd = data[key][data[key].length-1].bid;
-                var bidPercentage = ((bidEnd - bidStart) / ((bidEnd + bidStart) / 2)) * 100;
+                var bidPercentage = ((bidEnd - bidStart) / bidStart) * 100;
                 logger.debug(exchange + " - " + pair + " - bidPercentage (val="+val+", unit="+unit+")="+bidPercentage);
               
               
               
                 var askStart = data[key][0].ask;
                 var askEnd = data[key][data[key].length-1].ask;
-                var askPercentage = ((askEnd - askStart) / ((askEnd + askStart) / 2)) * 100;
+                var askPercentage = ((askEnd - askStart) / askStart) * 100;
                 logger.debug(exchange + " - " + pair + " - askPercentage (val="+val+", unit="+unit+")="+askPercentage);
               
                 
