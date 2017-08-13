@@ -3,7 +3,7 @@
  * @description: TODO
  * @author: Gregoire Jeanmart <gregoire.jeanmart@gmail.com>
  */
-var dataLoader = function() {
+var dataLoader = function(baseDir) {
 
     'use strict';
 
@@ -27,7 +27,7 @@ var dataLoader = function() {
         for(var pair of exchange.currency_pairs) {
             logger.info("data-loader.js | Setup market data loader job for [Exchange: "+exchange.name+", pair="+pair.name+", cron="+config.jobs.load_prices.cron+"]");
             
-            var db = new Datastore({ filename: config.database.folder+'/'+exchange.name+'-'+pair.name+'.db', autoload: true });
+            var db = new Datastore({ filename: baseDir + '/' + config.database.folder+'/'+exchange.name+'-'+pair.name+'.db', autoload: true });
             
             db.find({}, function (err, docs) {
                 
@@ -39,11 +39,16 @@ var dataLoader = function() {
                         logger.info("data-loader.js | Database is empty, load the historitical data ...");
                         
                         loadCSV(pair.historitical_data, db, exchange, pair).then(function(){
+                            return fillGap(db, exchange, pair);
+                            
+                        }).then(function() {
                             cronjobs.push(scheduleJob(db, exchange, pair));
                         });
-                        
+ 
                     } else {
-                        cronjobs.push(scheduleJob(db, exchange, pair));
+                        fillGap(db, exchange, pair).then(function(){
+                            cronjobs.push(scheduleJob(db, exchange, pair));
+                        });
                     } 
                 }
             });
@@ -97,7 +102,7 @@ var dataLoader = function() {
 
             });
 
-            fs.createReadStream(pair.historitical_data).pipe(parser);
+            fs.createReadStream(baseDir + '/' + pair.historitical_data).pipe(parser);
         });
         
 
@@ -106,38 +111,62 @@ var dataLoader = function() {
     function fillGap(database, exchange, pair) {
         logger.debug("data-loader.js | Fill gap [exchange="+exchange.name+", pair="+pair.name+"]")
         
-        database.findOne().sort({ timestamp: -1 }).exec(function (err, doc) {
-            if(err) {
-                logger.error("data-loader.js | Error while reading the latest record in the DB", err);
-                return;
-            }
-
-            if(exchange.name === "bittrex") {
-                bittrex.getMarketHistory(pair.name, moment(doc.timestamp).valueOf()).then(function(result){
-                    logger.debug("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+") - nb records=" + result.length);
-
-                    for(var r of result) {
-                        if(r.timestamp > moment(doc.timestamp).valueOf()) {
-
-                            // Insert the price in the DB
-                            database.insert(r, function (err, doc) { 
-                                if(err) {
-                                    logger.error("data-loader.js | Error while inserting the price in the DB",err);
-                                }
-
-                                logger.debug("data-loader.js | Records inserted in the DB", doc);
+        return new Promise((resolve, reject) => {
+            database.findOne().sort({ timestamp: -1 }).exec(function (err, doc) {
+                if(err) {
+                    logger.error("data-loader.js | Error while reading the latest record in the DB", err);
+                    return reject({
+                                'timestamp'   : Date.now(),
+                                'code'        : "000",
+                                'message'     : "todo",
+                                'debug'       : err
                             });
+                }
+
+                if(exchange.name === "bittrex") {
+                    bittrex.getMarketHistory(pair.name, moment(doc.timestamp).valueOf()).then(function(result){
+                        logger.debug("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+") - nb records=" + result.length);
+
+                        for(var r of result) {
+                            if(r.timestamp > moment(doc.timestamp).valueOf()) {
+
+                                // Insert the price in the DB
+                                database.insert(r, function (err, doc) { 
+                                    if(err) {
+                                        logger.error("data-loader.js | Error while inserting the price in the DB",err);
+                                    }
+
+                                    logger.debug("data-loader.js | Records inserted in the DB", doc);
+                                });
+                            }
                         }
-                    }
-                }).catch(function(error) {
-                    logger.error("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
-                }); 
-                   
-            } else {
-                logger.warn("data-loader.js | Unknow exchange", exchange)
-            }
-            
+                        
+                        return resolve();
+                        
+                    }).catch(function(error) {
+                        logger.error("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
+                        
+                        return reject({
+                                'timestamp'   : Date.now(),
+                                'code'        : "000",
+                                'message'     : "todo",
+                                'debug'       : error
+                        });
+                    }); 
+                       
+                } else {
+                    logger.warn("data-loader.js | Unknow exchange", exchange);
+                    
+                    return reject({
+                            'timestamp'   : Date.now(),
+                            'code'        : "000",
+                            'message'     : "Unknow exchange",
+                            'debug'       : error
+                    });
+                }
+            });
         });
+
     }
     
     // scheduleJob
@@ -150,8 +179,11 @@ var dataLoader = function() {
             cron.job        = new CronJob(
                 config.jobs.load_prices.cron, 
                 function() {
-                    logger.info('data-loader.js | Execute cron job to load data [exchange=' + exchange.name + ", pair=" + pair.name + ']');
-                    fillGap(database, exchange, pair);
+                    logger.info('data-loader.js | Execute cron job to load data [exchange=' + exchange.name + ", pair=" + pair.name + '] ...');
+                    
+                    fillGap(database, exchange, pair).then(function() {
+                        logger.info('data-loader.js | Execute cron job to load data [exchange=' + exchange.name + ", pair=" + pair.name + '] ended');
+                    });
                 }, 
                 null, 
                 true, 

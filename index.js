@@ -23,14 +23,14 @@ var TradeBotApp = function() {
         logger.info('index.js | Server is running!', { port: config.get('server.port') });
         
         //Data loader
-        require('./jobs/data-loader.js')();
+        require('./jobs/data-loader.js')(__dirname);
         
         
         //var tradeBot        = require('./jobs/trade-bot.js')(database, {});
         
         // Start API
         var accountAPI      = require('./api/account.js')(app);
-        var pricesAPI       = require('./api/prices.js')(app);
+        var pricesAPI       = require('./api/prices.js')(app, __dirname);
         
         
         

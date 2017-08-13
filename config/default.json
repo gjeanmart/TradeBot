@@ -21,18 +21,18 @@
     "exchanges": {
         "bittrex": {
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": "***",
-            "api_sec": "***",
+            "api_key": "*****",
+            "api_sec": "*****",
             "currency_pairs": [
                 {
                     "name": "BTC-ETH",
-                    "historitical_data": "C:/Users/gjeanmart/Desktop/workspace/BLOCKCHAIN/TradeBot/data/bittrex_BTC-ETH_historitical_2015-08-14_2017-06-25.csv"
+                    "historitical_data": "exchange/historitical_data/bittrex_BTC-ETH_historitical_2015-08-14_2017-06-25.csv"
                 }
             ]
         }
     }, 
     
     "database": {
-        "folder": ""
+        "folder": "db/"
     }
 }
