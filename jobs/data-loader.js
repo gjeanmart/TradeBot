@@ -13,6 +13,7 @@ var dataLoader = function() {
         Datastore   = require('nedb'),
         fs          = require('fs'),
         csv         = require('csv'),
+        moment      = require('moment'),
         logger      = require('../common/log.js'),
         bittrex     = require('../exchange/bittrex.js');
 
@@ -29,53 +30,119 @@ var dataLoader = function() {
             var db = new Datastore({ filename: config.database.folder+'/'+exchange.name+'-'+pair.name+'.db', autoload: true });
             
             db.find({}, function (err, docs) {
+                
                 if(err) {
                     logger.error("data-loader.js | Error while loading the database '"+config.database.folder+"/"+exchange.name+"-"+pair.name+".db'", err);
+                    
                 } else {
-                    if(docs.length === 0) {
+                    if(!docs || docs.length === 0) {
                         logger.info("data-loader.js | Database is empty, load the historitical data ...");
                         
-                        loadCSV(pair.historitical_data, db, exchange, pair);
+                        loadCSV(pair.historitical_data, db, exchange, pair).then(function(){
+                            cronjobs.push(scheduleJob(db, exchange, pair));
+                        });
+                        
+                    } else {
+                        cronjobs.push(scheduleJob(db, exchange, pair));
                     } 
-                    
-                    //calculate GAP
-                    
                 }
             });
-            
-            //cronjobs.push(scheduleJob(exchange, pair));
         }
     });  
 
     function loadCSV(csvFile, database, exchange, pair) {
         logger.debug("data-loader.js | Load the historitical data [csvFile="+csvFile+", exchange="+exchange.name+", pair="+pair.name+"]");
-                        
-        var parser = csv.parse({'delimiter': ",", 'from': 4}, function(err, data){
-            if(err) {
-                logger.error("data-loader.js | Error while loading the historitical data file '"+pair.historitical_data+"'", err);
-                return;
-            }
-             logger.debug("___");
-             logger.debug(data);
-             
-             
-             // ["6/25/2017 10:54:00 PM","0.10876993","0.10876993","0.10877994","0.10858413","13.26303219","1.44258963"
-             
-             
-        });
+        
+        return new Promise((resolve, reject) => {
+            var parser = csv.parse({'delimiter': ","}, function(err, data){
+                if(err) {
+                    logger.error("data-loader.js | Error while loading the historitical data file '"+pair.historitical_data+"'", err);
+                            
+                    return reject({
+                        'timestamp'   : Date.now(),
+                        'code'        : "000",
+                        'message'     : "todo",
+                        'debug'       : err
+                    });
+                }
+                
+                Object.keys(data).forEach(function(key) {
 
-        fs.createReadStream(pair.historitical_data).pipe(parser);
+                    var record = {
+                        'timestamp'     : moment(data[key][0]).toDate(),
+                        'open'          : parseFloat(data[key][1]),
+                        'close'         : parseFloat(data[key][2]),
+                        'high'          : parseFloat(data[key][3]),
+                        'low'           : parseFloat(data[key][4]),
+                        'volume'        : parseFloat(data[key][5])
+                    };
+
+                    database.insert(record, function (err, doc) { 
+                        if(err) {
+                            logger.error("data-loader.js | Error while inserting the record ["+JSON.stringify(record)+"] in the DB", err);
+                            
+                            return reject({
+                                'timestamp'   : Date.now(),
+                                'code'        : "000",
+                                'message'     : "todo",
+                                'debug'       : err
+                            });
+                        }
+
+                        logger.debug("data-loader.js | Record inserted in the DB", record);
+                        
+                        return resolve();
+                    });
+                });
+
+            });
+
+            fs.createReadStream(pair.historitical_data).pipe(parser);
+        });
+        
+
     }
     
     function fillGap(database, exchange, pair) {
+        logger.debug("data-loader.js | Fill gap [exchange="+exchange.name+", pair="+pair.name+"]")
         
+        database.findOne().sort({ timestamp: -1 }).exec(function (err, doc) {
+            if(err) {
+                logger.error("data-loader.js | Error while reading the latest record in the DB", err);
+                return;
+            }
+
+            if(exchange.name === "bittrex") {
+                bittrex.getMarketHistory(pair.name, moment(doc.timestamp).valueOf()).then(function(result){
+                    logger.debug("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+") - nb records=" + result.length);
+
+                    for(var r of result) {
+                        if(r.timestamp > moment(doc.timestamp).valueOf()) {
+
+                            // Insert the price in the DB
+                            database.insert(r, function (err, doc) { 
+                                if(err) {
+                                    logger.error("data-loader.js | Error while inserting the price in the DB",err);
+                                }
+
+                                logger.debug("data-loader.js | Records inserted in the DB", doc);
+                            });
+                        }
+                    }
+                }).catch(function(error) {
+                    logger.error("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
+                }); 
+                   
+            } else {
+                logger.warn("data-loader.js | Unknow exchange", exchange)
+            }
+            
+        });
     }
     
     // scheduleJob
-    function scheduleJob(exchange, pair) {
-        
+    function scheduleJob(database, exchange, pair) {
         try {
-            
             var cron = {};
             
             cron.exchange   = exchange;
@@ -83,30 +150,8 @@ var dataLoader = function() {
             cron.job        = new CronJob(
                 config.jobs.load_prices.cron, 
                 function() {
-                    logger.debug('Load price for ' + exchange.name + ", pair " + pair);
-                    
-                    if(exchange.name === "bittrex") {
-                        bittrex.getMarketPrice(pair).then(function(result){
-                            logger.debug("bittrex.getMarketPrice(cron.pair="+pair+")", result);
-
-                            // Insert the price in the DB
-                            database.prices.insert(result, function (err, doc) { 
-                            
-                                if(err) {
-                                    logger.error("Error while inserting the price in the DB",err);
-                                }
-
-                                logger.debug("Price inserted in the DB", doc);
-                            });
-                            
-                        }).catch(function(error) {
-                            logger.error("bittrex.getMarketPrice(cron.pair="+pair+")", error);
-                        });
-                        
-                    } else {
-                        logger.warn("Unknow exchange", exchange)
-                    }
- 
+                    logger.info('data-loader.js | Execute cron job to load data [exchange=' + exchange.name + ", pair=" + pair.name + ']');
+                    fillGap(database, exchange, pair);
                 }, 
                 null, 
                 true, 
@@ -116,7 +161,7 @@ var dataLoader = function() {
             return cron;
             
         } catch(ex) {
-            logger.error('cron ['+config.jobs.load_prices.cron+'] not valid: ' + ex);
+            logger.error('data-loader.js | Cron ['+config.jobs.load_prices.cron+'] not valid: ' + ex);
         }  
     }
     

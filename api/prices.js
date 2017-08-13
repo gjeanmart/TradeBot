@@ -8,6 +8,7 @@ var pricesAPI = function(app, database) {
     'use strict';
     
     var config      = require('config'),
+        Datastore   = require('nedb'),
         logger      = require('../common/log.js'),
         bittrex     = require('../exchange/bittrex.js');
 
@@ -15,7 +16,9 @@ var pricesAPI = function(app, database) {
     app.get('/api/v1/prices/', (req, res) => {
         logger.debug("GET /api/v1/prices/ ...", req.query);
         
-        database.prices.find(req.query, function (err, docs) {
+        var db = new Datastore({ filename: config.database.folder+'/'+req.query.exchange+'-'+req.query.pair+'.db', autoload: true });
+        
+        db.find({}).sort({ timestamp: 1 }).exec(function (err, docs) {
             if(err) {
                 logger.error("Error while finding the price in the DB",err);
                 res.status(500).json(err);

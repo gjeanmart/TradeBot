@@ -18,12 +18,9 @@ var TradeBotApp = function() {
     require('./config.js')(app);
 
     // Runtime
-    logger.info('Starting server ...');
+    logger.info('index.js | Starting server ...');
     server.listen(config.get('server.port'), function() {
-        logger.info('Server is running!', { port: config.get('server.port') });
-
-        //Load Database
-        //var database        = require('./db/db.js')();
+        logger.info('index.js | Server is running!', { port: config.get('server.port') });
         
         //Data loader
         require('./jobs/data-loader.js')();
@@ -32,8 +29,8 @@ var TradeBotApp = function() {
         //var tradeBot        = require('./jobs/trade-bot.js')(database, {});
         
         // Start API
-        //var accountAPI      = require('./api/account.js')(app);
-        //var pricesAPI       = require('./api/prices.js')(app, database);
+        var accountAPI      = require('./api/account.js')(app);
+        var pricesAPI       = require('./api/prices.js')(app);
         
         
         

@@ -11,27 +11,28 @@
     
     "jobs": {
         "load_prices": {
-            "cron": "0 */5 * * * *"
+            "cron": "0 * * * * *"
         },
         "trade_bot": {
-            "cron": "0 * * * * *"
+            "cron": "30 * * * * *"
         }
     },
 
     "exchanges": {
         "bittrex": {
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": "xxxxxxxxxxxxxxxxxxxxxxxx",
-            "api_sec": "xxxxxxxxxxxxxxxxxxxxxxxxx",
+            "api_key": "***",
+            "api_sec": "***",
             "currency_pairs": [
-                "BTC-ETH",
-                "BTC-LTC",
-                "BTC-DOGE"
+                {
+                    "name": "BTC-ETH",
+                    "historitical_data": "C:/Users/gjeanmart/Desktop/workspace/BLOCKCHAIN/TradeBot/data/bittrex_BTC-ETH_historitical_2015-08-14_2017-06-25.csv"
+                }
             ]
         }
     }, 
     
     "database": {
-        "prices": ""
+        "folder": ""
     }
 }

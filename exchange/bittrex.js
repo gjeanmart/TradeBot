@@ -24,13 +24,18 @@ var bittrexAPI = function() {
     
     return {
         
-        // getMarketPrice
-        'getMarketPrice': function(pair) {
-            
+        // Market History
+        'getMarketHistory': function(pair, start) {
+            logger.debug("bittrex.js | getMarketHistory(pair="+pair+", start="+start+")");
             return new Promise((resolve, reject) => {
                 
-                api.getmarketsummary({'market': pair}, function( data, err ) {
+                api.getcandles({
+                    'marketName'      : pair,
+                    'tickInterval'    : "oneMin", 
+                    '_'               : start
+                }, function(data, err) {
                     if (err) {
+                    logger.error("bittrex.js | getMarketHistory(pair="+pair+", start="+start+")",err);
                         return reject({
                             'timestamp'   : Date.now(),
                             'code'        : "000",
@@ -38,19 +43,20 @@ var bittrexAPI = function() {
                             'debug'       : err
                         });
                     }
+                    var res = [];
+                    for(var r of data.result) {
+                        var record = {
+                            'timestamp'     : moment(r.T + "Z").toDate(),
+                            'open'          : parseFloat(r.O),
+                            'close'         : parseFloat(r.C),
+                            'high'          : parseFloat(r.H),
+                            'low'           : parseFloat(r.L),
+                            'volume'        : parseFloat(r.V)
+                        };
+                        res.push(record);
+                    }
 
-                    return resolve({
-                        'exchange'      : "bittrex",
-                        'pair'          : data.result[0].MarketName,
-                        'timestamp'     : moment(data.result[0].TimeStamp + "Z").toDate(),
-                        'volume'        : data.result[0].Volume,
-                        'high'          : data.result[0].High,
-                        'low'           : data.result[0].Low,
-                        'last'          : data.result[0].Last,
-                        'bid'           : data.result[0].Bid,
-                        'ask'           : data.result[0].Ask
-                    });
-                    
+                    return resolve(res);
                 });
             });
         },
