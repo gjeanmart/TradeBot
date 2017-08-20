@@ -9,20 +9,20 @@
         "level": "debug"
     }, 
     
-    "jobs": {
-        "load_prices": {
-            "cron": "0 * * * * *"
+    "parameters": {
+        "data_loader": {
+            "cron": "0 * * * * *" 
         },
-        "trade_bot": {
-            "cron": "30 * * * * *"
+        "database": {
+            "folder": "db/"
         }
     },
 
     "exchanges": {
         "bittrex": {
             "api_endpoint": "https://bittrex.com/api/v1.1/",
-            "api_key": "*****",
-            "api_sec": "*****",
+            "api_key": "****",
+            "api_sec": "****",
             "currency_pairs": [
                 {
                     "name": "BTC-ETH",
@@ -32,7 +32,14 @@
         }
     }, 
     
-    "database": {
-        "folder": "db/"
-    }
+    "bots": [
+        {
+            "name": "dummy",
+            "strategy": "simple",
+            "cron": "30 * * * * *",
+            "exchanges": ["bittrex"],
+            "currencies": ["BTC-ETH"]
+        }
+    ]
+
 }

@@ -19,20 +19,25 @@ var dataLoader = function(baseDir) {
 
     // Initialization
     var cronjobs = [];
+    var database = {};
 
     Object.keys(config.exchanges).forEach(function(key) {
         var exchange = config.exchanges[key];
         exchange.name = key;
+        
+        database[exchange.name] = {};
       
         for(var pair of exchange.currency_pairs) {
-            logger.info("data-loader.js | Setup market data loader job for [Exchange: "+exchange.name+", pair="+pair.name+", cron="+config.jobs.load_prices.cron+"]");
+            logger.info("data-loader.js | Setup market data loader job for [Exchange: "+exchange.name+", pair="+pair.name+", cron="+config.parameters.data_loader.cron+"]");
             
-            var db = new Datastore({ filename: baseDir + '/' + config.database.folder+'/'+exchange.name+'-'+pair.name+'.db', autoload: true });
+            var db = new Datastore({ filename: baseDir + '/' + config.parameters.database.folder+'/'+exchange.name+'-'+pair.name+'.db', autoload: true });
+            
+            database[exchange.name][pair.name]=db;
             
             db.find({}, function (err, docs) {
                 
                 if(err) {
-                    logger.error("data-loader.js | Error while loading the database '"+config.database.folder+"/"+exchange.name+"-"+pair.name+".db'", err);
+                    logger.error("data-loader.js | Error while loading the database '"+config.parameters.database.folder+"/"+exchange.name+"-"+pair.name+".db'", err);
                     
                 } else {
                     if(!docs || docs.length === 0) {
@@ -125,7 +130,7 @@ var dataLoader = function(baseDir) {
 
                 if(exchange.name === "bittrex") {
                     bittrex.getMarketHistory(pair.name, moment(doc.timestamp).valueOf()).then(function(result){
-                        logger.debug("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+") - nb records=" + result.length);
+                        logger.debug("data-loader.js | bittrex.getMarketHistory(pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+") - nb records=" + result.length);
 
                         for(var r of result) {
                             if(r.timestamp > moment(doc.timestamp).valueOf()) {
@@ -144,7 +149,7 @@ var dataLoader = function(baseDir) {
                         return resolve();
                         
                     }).catch(function(error) {
-                        logger.error("data-loader.js | bittrex.getMarketHistory(cron.pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
+                        logger.error("data-loader.js | bittrex.getMarketHistory(pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
                         
                         return reject({
                                 'timestamp'   : Date.now(),
@@ -177,7 +182,7 @@ var dataLoader = function(baseDir) {
             cron.exchange   = exchange;
             cron.pair       = pair;
             cron.job        = new CronJob(
-                config.jobs.load_prices.cron, 
+                config.parameters.data_loader.cron, 
                 function() {
                     logger.info('data-loader.js | Execute cron job to load data [exchange=' + exchange.name + ", pair=" + pair.name + '] ...');
                     
@@ -193,11 +198,11 @@ var dataLoader = function(baseDir) {
             return cron;
             
         } catch(ex) {
-            logger.error('data-loader.js | Cron ['+config.jobs.load_prices.cron+'] not valid: ' + ex);
+            logger.error('data-loader.js | Cron ['+config.parameters.data_loader.cron+'] not valid: ' + ex);
         }  
     }
     
-    return {};
+    return database;
         
 };
 
