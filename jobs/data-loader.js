@@ -36,6 +36,10 @@ var dataLoader = function(baseDir) {
             
             db.find({}, function (err, docs) {
                 
+                logger.debug("*********************");
+                logger.debug(exchange, pair);
+                logger.debug("*********************");
+                
                 if(err) {
                     logger.error("data-loader.js | Error while loading the database '"+config.parameters.database.folder+"/"+exchange.name+"-"+pair.name+".db'", err);
                     
@@ -99,7 +103,7 @@ var dataLoader = function(baseDir) {
                             });
                         }
 
-                        logger.debug("data-loader.js | Record inserted in the DB", record);
+                        logger.debug("data-loader.js | Record inserted in the DB ["+exchange.name+"|"+pair.name+"]", record);
                         
                         return resolve();
                     });
@@ -141,12 +145,12 @@ var dataLoader = function(baseDir) {
                                         logger.error("data-loader.js | Error while inserting the price in the DB",err);
                                     }
 
-                                    logger.debug("data-loader.js | Records inserted in the DB", doc);
+                                    logger.debug("data-loader.js | Records inserted in the DB ["+exchange.name+"|"+pair.name+"]", doc);
                                 });
                             }
                         }
                         
-                        return resolve();
+                        return resolve({});
                         
                     }).catch(function(error) {
                         logger.error("data-loader.js | bittrex.getMarketHistory(pair="+pair.name+", start="+moment(doc.timestamp).valueOf()+")", error);
@@ -176,6 +180,7 @@ var dataLoader = function(baseDir) {
     
     // scheduleJob
     function scheduleJob(database, exchange, pair) {
+        logger.debug("data-loader.js | start cron job [exchange="+exchange.name+", pair="+pair.name+"]");
         try {
             var cron = {};
             
